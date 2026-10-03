@@ -1,0 +1,9 @@
+**
+!package.json
+!package-lock.json
+!server.mjs
+!network-config.mjs
+!iapartments.mjs
+!cloud-mqtt.mjs
+!public/
+!public/**

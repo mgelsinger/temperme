@@ -1,0 +1,23 @@
+{
+	admin off
+	auto_https disable_redirects
+	skip_install_trust
+	default_sni {$TEMPERME_LAN_IP}
+	servers {
+		protocols h1 h2
+	}
+}
+
+https://{$TEMPERME_LAN_IP}:9443 {
+	tls internal
+
+	# Do not expose the container health probe through the LAN proxy.
+	respond /healthz 404
+	reverse_proxy app:8765 {
+		# Keep the original Host for the app's exact origin check.
+		header_up Host {http.request.hostport}
+		header_up -Forwarded
+		header_up -X-Forwarded-Host
+		header_up -X-Forwarded-Proto
+	}
+}

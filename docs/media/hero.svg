@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="680" viewBox="0 0 1440 680" role="img" aria-labelledby="title description">
+  <title id="title">TemperMe. Your comfort. Your own interface.</title>
+  <desc id="description">A self-hosted browser interface for your iApartments thermostat. Cool, heat, fan only, and a comfortable temperature range. An illustrated thermostat is shown alongside the path from your browser through your server to the resident cloud.</desc>
+  <defs>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#183951"/><stop offset="1" stop-color="#102333"/></linearGradient>
+    <linearGradient id="dial" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#b9e0ed"/><stop offset="1" stop-color="#6da5cd"/></linearGradient>
+    <radialGradient id="glow"><stop stop-color="#3c7598" stop-opacity=".45"/><stop offset="1" stop-color="#3c7598" stop-opacity="0"/></radialGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#163040" flood-opacity=".1"/></filter>
+  </defs>
+  <rect x="1" y="1" width="1438" height="678" rx="30" fill="#f5f4ef" stroke="#dbe3e4"/>
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <rect x="66" y="55" width="46" height="46" rx="14" fill="#225f91"/>
+    <g transform="translate(80 64)" fill="none" stroke="#fff" stroke-width="2"><path d="M5 16V5a4 4 0 0 1 8 0v11a7 7 0 1 1-8 0Z"/><path d="M9 7v16" stroke-linecap="round"/><circle cx="9" cy="23" r="2" fill="#fff"/></g>
+    <text x="128" y="87" fill="#20384a" font-size="31" font-weight="650" letter-spacing="-1">TemperMe</text>
+    <text x="68" y="177" fill="#225f91" font-size="13" font-weight="700" letter-spacing="2.4">SMALL SERVICE. COMFORTABLE HOME.</text>
+    <text x="64" y="265" fill="#20384a" font-size="66" font-weight="600" letter-spacing="-2.6">Your comfort.</text>
+    <text x="64" y="341" fill="#20384a" font-size="66" font-weight="600" letter-spacing="-2.6">Your own interface.</text>
+    <text x="68" y="397" fill="#607783" font-size="23">A self-hosted browser interface for your</text>
+    <text x="68" y="430" fill="#607783" font-size="23">iApartments thermostat.</text>
+    <g font-size="12" font-weight="650" letter-spacing="1">
+      <rect x="68" y="470" width="85" height="34" rx="17" fill="#e7eff3"/><text x="110" y="492" text-anchor="middle" fill="#225f91">COOL</text>
+      <rect x="163" y="470" width="85" height="34" rx="17" fill="#f2e8dc"/><text x="205" y="492" text-anchor="middle" fill="#956439">HEAT</text>
+      <rect x="258" y="470" width="113" height="34" rx="17" fill="#e5efea"/><text x="314" y="492" text-anchor="middle" fill="#427461">FAN ONLY</text>
+      <rect x="381" y="470" width="100" height="34" rx="17" fill="#e9e8ef"/><text x="431" y="492" text-anchor="middle" fill="#6c648b">RANGE</text>
+    </g>
+    <path d="M68 552h619" stroke="#dbe3e4"/>
+    <g fill="#667e8a" font-size="12" font-weight="600" letter-spacing="1.1">
+      <text x="68" y="589">YOUR BROWSER</text><text x="283" y="589">YOUR SERVER</text><text x="491" y="589">RESIDENT CLOUD</text>
+    </g>
+    <g fill="none" stroke="#a1b5bf" stroke-width="1.5"><path d="M207 584h47m-6-5 6 5-6 5M416 584h46m-6-5 6 5-6 5"/></g>
+    <text x="68" y="619" fill="#7b8d95" font-size="12">Independent project. Cloud connection required.</text>
+    <g filter="url(#shadow)">
+      <rect x="810" y="52" width="574" height="576" rx="27" fill="url(#panel)"/>
+      <circle cx="1100" cy="327" r="260" fill="url(#glow)"/>
+      <path d="M824 500c66-70 104 49 177-19s83-53 134-20 103 9 249-70M810 541c71-70 130 13 198-30s87-53 138-20 89 5 238-76" fill="none" stroke="#49758b" stroke-opacity=".18"/>
+      <text x="846" y="96" fill="#a6c6d7" font-size="12" font-weight="650" letter-spacing="1.4">A LITTLE MORE COMFORT</text>
+      <circle cx="1337" cy="92" r="5" fill="#8bccaf"/>
+      <circle cx="1097" cy="304" r="139" fill="none" stroke="#355369" stroke-width="2"/>
+      <circle cx="1097" cy="304" r="139" fill="none" stroke="url(#dial)" stroke-width="7" stroke-linecap="round" stroke-dasharray="606 873" transform="rotate(135 1097 304)"/>
+      <circle cx="1097" cy="304" r="118" fill="#16334a" fill-opacity=".65"/>
+      <text x="1097" y="245" text-anchor="middle" fill="#a6c6d7" font-size="13" letter-spacing="2.7">COOLING TARGET</text>
+      <text x="1097" y="337" text-anchor="middle" fill="#fff" font-size="91" font-weight="300" letter-spacing="-5">72°</text>
+      <text x="1097" y="379" text-anchor="middle" fill="#a6c6d7" font-size="17">Fahrenheit</text>
+      <rect x="852" y="479" width="490" height="110" rx="18" fill="#ffffff" fill-opacity=".07" stroke="#7194a8" stroke-opacity=".2"/>
+      <text x="879" y="513" fill="#a6c6d7" font-size="12">FAN ONLY</text>
+      <text x="879" y="552" fill="#f0f5f8" font-size="22" font-weight="500">Airflow without the chill.</text>
+      <g transform="translate(1289 533)" fill="#a6c6d7"><circle r="4"/><path d="M-2-7c-25-25-13-35 2-31 10 3 8 16 4 26ZM7-2c25-25 35-13 31 2-3 10-16 8-26 4ZM2 7c25 25 13 35-2 31-10-3-8-16-4-26ZM-7 2c-25 25-35 13-31-2 3-10 16-8 26-4Z" transform="scale(.65)"/></g>
+    </g>
+  </g>
+</svg>

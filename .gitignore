@@ -1,0 +1,25 @@
+node_modules/
+.env
+.env.*
+!.env.example
+*.log
+.local/
+certificates/
+# Runtime data, captures, keys and local tooling never belong in the public repo.
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+*.har
+*.pcap
+*.pcapng
+*.heapsnapshot
+*.cpuprofile
+coverage/
+.cache/
+test-results/
+playwright-report/
+.DS_Store
+Thumbs.db

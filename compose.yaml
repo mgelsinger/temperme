@@ -1,0 +1,46 @@
+name: temperme
+services:
+  app:
+    build: .
+    restart: unless-stopped
+    init: true
+    environment:
+      TEMPERME_BIND_HOST: 0.0.0.0
+      TEMPERME_PORT: 8765
+      TEMPERME_HTTPS_PROXY: 1
+      TEMPERME_PUBLIC_ORIGINS: https://${TEMPERME_LAN_IP:?Set TEMPERME_LAN_IP in .env}:9443
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      TEMPERME_LAN_IP: ${TEMPERME_LAN_IP:?Set TEMPERME_LAN_IP in .env}
+    ports:
+      - "${TEMPERME_LAN_IP}:9443:9443/tcp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    cap_drop:
+      - ALL
+    # The official Caddy binary carries this file capability and needs it
+    # in the bounding set to execute, even when listening above port 1024.
+    cap_add:
+      - NET_BIND_SERVICE
+    security_opt:
+      - no-new-privileges:true
+volumes:
+  caddy_data:
+  caddy_config:

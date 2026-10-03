@@ -1,0 +1,19 @@
+{
+  "name": "temperme",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local browser controls for an iApartments Gen1 thermostat",
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --experimental-vm-modules --test"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@aws-sdk/client-cognito-identity": "3.1146.0",
+    "amazon-cognito-identity-js": "6.3.20",
+    "mqtt": "5.16.0"
+  }
+}

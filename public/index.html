@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>TemperMe | Your thermostat</title>
+  <style>
+    :root { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #20384a; background: #f5f4ef; font-synthesis: none; --blue: #225f91; --muted: #687982; --line: #dce3e4; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 280px; }
+    button, input, select { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: wait; opacity: .65; }
+    [hidden] { display: none !important; }
+    .shell { max-width: 1040px; padding: 34px 36px 24px; margin: 0 auto; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-bottom: 55px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-size: 21px; font-weight: 650; letter-spacing: -.7px; }
+    .brand-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; background: var(--blue); color: white; }
+    .local-badge { color: #516b7b; font-size: 12px; border: 1px solid #d5dfe1; border-radius: 20px; padding: 7px 12px; }
+    main { display: grid; grid-template-columns: 1fr 1fr; gap: 58px; align-items: start; }
+    .intro { padding: 25px 0; }
+    .eyebrow { margin: 0 0 17px; color: var(--blue); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.8px; }
+    h1 { margin: 0; font-size: clamp(32px, 4vw, 44px); letter-spacing: -1.6px; line-height: 1.14; font-weight: 600; }
+    .lead { margin: 22px 0 34px; color: var(--muted); font-size: 16px; line-height: 1.65; max-width: 360px; }
+    .device { display: flex; align-items: center; gap: 16px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 22px 0; }
+    .device-icon { flex: none; display: grid; place-items: center; width: 54px; height: 54px; border-radius: 15px; background: #e4ebed; color: #557386; }
+    .device-title { font-size: 14px; font-weight: 600; margin: 0 0 6px; }
+    .device-model { font-size: 12px; color: var(--muted); margin: 0; }
+    .availability { color: var(--muted); font-size: 13px; line-height: 1.6; margin: 20px 0 0; max-width: 350px; }
+    .card { background: #fff; border: 1px solid #e0e5e5; border-radius: 22px; padding: 31px; box-shadow: 0 12px 32px #253e4a06; }
+    .status { display: inline-flex; align-items: center; gap: 7px; background: #f0f3f4; color: #60737f; border-radius: 20px; padding: 6px 10px; font-size: 11px; font-weight: 600; margin-bottom: 22px; }
+    .status-dot { width: 6px; height: 6px; background: currentColor; border-radius: 50%; }
+    .status[data-stage="connected"] { color: #32705c; background: #edf5f0; }
+    .status[data-stage="challenge"] { color: #886323; background: #faf3e7; }
+    h2 { font-size: 23px; letter-spacing: -.65px; margin: 0 0 11px; font-weight: 600; }
+    .description { color: var(--muted); font-size: 14px; line-height: 1.6; margin: 0 0 26px; }
+    label { display: block; font-size: 12px; font-weight: 650; margin-bottom: 8px; }
+    .field { margin-bottom: 19px; }
+    input, select { width: 100%; color: #20384a; background: #fcfdfd; border: 1px solid #cfdadd; border-radius: 9px; padding: 12px 13px; min-height: 45px; transition: border-color .15s, box-shadow .15s; }
+    input:focus, select:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px #225f9118; }
+    input::placeholder { color: #8a979e; }
+    button:focus-visible { outline: 3px solid #a0c6e2; outline-offset: 3px; }
+    .primary, .secondary { min-height: 45px; border-radius: 9px; padding: 12px 16px; font-size: 13px; font-weight: 600; }
+    .primary { width: 100%; color: #fff; background: var(--blue); border: 1px solid var(--blue); }
+    .primary:hover:enabled { background: #1a507c; }
+    .secondary { width: 100%; background: #fff; color: #416579; border: 1px solid #cfdadd; }
+    .secondary:hover:enabled { background: #f4f7f8; }
+    .text-button { padding: 5px 0; border: 0; background: transparent; color: var(--blue); font-size: 12px; text-decoration: underline; text-underline-offset: 3px; }
+    .privacy { color: #7b898f; font-size: 11px; line-height: 1.65; border-top: 1px solid #e8eded; margin: 26px 0 0; padding-top: 18px; }
+    .notice { background: #f2f6f8; color: #516b7a; padding: 14px; border: 1px solid #dfe9ee; border-radius: 10px; font-size: 13px; line-height: 1.6; margin: 0 0 22px; overflow-wrap: anywhere; }
+    .error { border: 1px solid #ebd7ce; border-radius: 9px; padding: 12px; color: #8f452e; background: #fff5ef; font-size: 13px; line-height: 1.55; margin: 0 0 20px; overflow-wrap: anywhere; }
+    .account { overflow-wrap: anywhere; font-weight: 600; color: #3e5d70; }
+    .loading { color: var(--muted); font-size: 14px; line-height: 1.6; }
+    .cancel { display: flex; justify-content: center; margin-top: 15px; }
+    .reading { padding: 2px 0 20px; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+    .reading-label { color: var(--muted); font-size: 12px; margin: 0 0 7px; }
+    .temperature { display: block; margin: 0; font-size: 48px; font-weight: 500; letter-spacing: -2px; line-height: 1.2; }
+    .temperature.unavailable { color: var(--muted); font-size: 24px; letter-spacing: -.5px; }
+    .readings-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 17px 20px; margin: 22px 0 0; }
+    .readings-grid div { min-width: 0; }
+    .readings-grid dt { color: var(--muted); font-size: 11px; margin-bottom: 5px; }
+    .readings-grid dd { font-size: 15px; font-weight: 600; margin: 0; overflow-wrap: anywhere; }
+    .last-read { color: var(--muted); font-size: 11px; line-height: 1.6; margin: 18px 0 0; }
+    .controls-title { font-size: 15px; font-weight: 600; margin: 0 0 17px; }
+    .range-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .range-help, .readonly-note { color: var(--muted); font-size: 12px; line-height: 1.6; margin: 0 0 18px; }
+    .account-actions { margin-top: 20px; display: grid; grid-template-columns: 1fr auto; gap: 19px; align-items: center; }
+    footer { color: #889399; border-top: 1px solid var(--line); font-size: 11px; line-height: 1.6; margin-top: 56px; padding-top: 18px; }
+    @media (max-width: 720px) { .shell { max-width: 510px; padding: 24px 20px; } header { padding-bottom: 26px; } main { grid-template-columns: 1fr; gap: 28px; } .intro { padding: 5px 0 0; } h1 { font-size: 35px; } .lead { margin: 16px 0 23px; max-width: none; } .device { padding: 17px 0; } .availability { max-width: none; margin-top: 15px; } .card { padding: 25px; border-radius: 18px; } footer { margin-top: 30px; } }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="brand"><span class="brand-mark" aria-hidden="true"><svg width="19" height="23" viewBox="0 0 19 23" fill="none"><path d="M7 13.5V5a2.5 2.5 0 0 1 5 0v8.5a4.5 4.5 0 1 1-5 0Z" stroke="currentColor" stroke-width="1.7"/><path d="M9.5 8v9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="9.5" cy="17" r="1.7" fill="currentColor"/></svg></span>TemperMe</div>
+      <span class="local-badge">Your thermostat</span>
+    </header>
+    <main>
+      <section class="intro" aria-labelledby="welcome-title">
+        <p class="eyebrow">Home climate</p>
+        <h1 id="welcome-title">Your comfort.<br>Your own interface.</h1>
+        <p class="lead">Adjust the temperature, choose a heating and cooling range, or run just the fan from your browser.</p>
+        <div class="device">
+          <span class="device-icon" aria-hidden="true"><svg width="30" height="32" viewBox="0 0 30 32" fill="none"><rect x="4" y="2" width="22" height="28" rx="5" stroke="currentColor" stroke-width="1.6"/><rect x="8" y="7" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M10 23h3m5 0h3m-1.5-1.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+          <div><p class="device-title">iApartments thermostat</p><p class="device-model">Model TN100/24/BK</p></div>
+        </div>
+        <p class="availability" id="availability-message">Thermostat controls will become available after the connection is verified.</p>
+      </section>
+      <section class="card" aria-label="Account connection" aria-busy="true" id="connection-card">
+        <div class="status" id="status-badge" data-stage="loading"><span class="status-dot" aria-hidden="true"></span><span id="status-text" role="status">Checking connection</span></div>
+        <div id="error" class="error" role="alert" hidden></div>
+        <div id="loading-view"><h2>Checking your session</h2><p class="loading">Contacting your TemperMe service.</p><button type="button" id="retry-button" class="secondary" hidden>Try again</button></div>
+        <div id="login-view" hidden>
+          <h2>Connect your account</h2>
+          <p class="description">Use your existing iApartments resident login. This connection uses iApartments' cloud.</p>
+          <form id="login-form">
+            <div class="field"><label for="email">Email address</label><input type="email" id="email" name="email" autocomplete="username" spellcheck="false" autocapitalize="none" placeholder="you@example.com" required maxlength="320"></div>
+            <div class="field"><label for="password">Password</label><input type="password" id="password" name="password" autocomplete="current-password" required></div>
+            <button class="primary" id="login-button" type="submit">Connect to iApartments</button>
+          </form>
+        </div>
+        <div id="challenge-view" hidden>
+          <h2>Verify your sign-in</h2>
+          <p class="description" id="challenge-description">Enter the verification code requested by iApartments.</p>
+          <form id="mfa-form">
+            <div class="field"><label for="code">Verification code</label><input type="text" id="code" name="code" inputmode="numeric" autocomplete="one-time-code" spellcheck="false" required maxlength="32"></div>
+            <button class="primary" id="mfa-button" type="submit">Verify code</button>
+          </form>
+          <div class="cancel"><button type="button" class="text-button" data-logout>Cancel sign-in</button></div>
+        </div>
+        <div id="connected-view" hidden>
+          <h2 id="connected-heading">Your account is signed in</h2>
+          <p class="description">Connected as <span class="account" id="account-email"></span>.</p>
+          <p class="notice" id="connection-message">Account sign-in is complete. Thermostat access still needs to be verified before controls are available.</p>
+          <div id="thermostat-view" hidden>
+            <div class="reading">
+              <p class="reading-label">Current temperature</p>
+              <output class="temperature" id="current-temperature">Unavailable</output>
+              <dl class="readings-grid">
+                <div><dt>Mode</dt><dd id="current-mode">Unavailable</dd></div>
+                <div><dt>Fan setting</dt><dd id="current-fan">Unavailable</dd></div>
+                <div id="fan-activity-reading" hidden><dt>Fan activity</dt><dd id="fan-activity">Unavailable</dd></div>
+                <div id="hvac-activity-reading" hidden><dt>Heating / cooling activity</dt><dd id="hvac-activity">Unavailable</dd></div>
+                <div id="single-reading"><dt>Target temperature</dt><dd id="target-temperature">Unavailable</dd></div>
+                <div id="heat-reading" hidden><dt>Heat below</dt><dd id="heat-target">Unavailable</dd></div>
+                <div id="cool-reading" hidden><dt>Cool above</dt><dd id="cool-target">Unavailable</dd></div>
+              </dl>
+              <p class="last-read">Last read: <time id="updated-at">Unavailable</time>. Use Refresh readings to get an update.</p>
+            </div>
+            <p class="readonly-note" id="readonly-note">Readings are available. Controls are waiting for connection verification.</p>
+            <form id="thermostat-form" hidden>
+              <h3 class="controls-title">Adjust your thermostat</h3>
+              <div class="field"><label for="mode">Mode</label><select id="mode" name="mode" required disabled><option value="" disabled>Choose a mode</option><option value="off">Off</option><option value="fan_only">Fan only</option><option value="cool">Cool</option><option value="heat">Heat</option><option value="heat_cool">Heat &amp; cool</option></select></div>
+              <p class="range-help" id="mode-help" hidden></p>
+              <div class="field" id="single-target-field" hidden><label for="target">Target temperature (<span data-unit>F</span>)</label><input type="number" id="target" name="targetTemperature" step="1" inputmode="decimal" disabled></div>
+              <div id="range-target-fields" hidden>
+                <div class="range-fields">
+                  <div class="field"><label for="heat">Heat below (<span data-unit>F</span>)</label><input type="number" id="heat" name="heatTarget" step="1" inputmode="decimal" disabled></div>
+                  <div class="field"><label for="cool">Cool above (<span data-unit>F</span>)</label><input type="number" id="cool" name="coolTarget" step="1" inputmode="decimal" disabled></div>
+                </div>
+                <p class="range-help">Keep the heating target at least 3&deg;F below the cooling target.</p>
+              </div>
+              <div class="field" id="fan-field" hidden><label for="fan">Fan setting</label><select id="fan" name="fan" disabled><option value="keep" id="keep-fan-option">Keep current fan setting</option><option value="auto">Auto - follows heating and cooling</option><option value="on">On - continuous airflow</option></select></div>
+              <button type="submit" class="primary" id="apply-button" disabled>Apply settings</button>
+            </form>
+          </div>
+          <div class="account-actions"><button type="button" class="secondary" id="refresh-button">Refresh readings</button><button type="button" class="text-button" data-logout>Sign out</button></div>
+        </div>
+        <p class="privacy">Your iApartments password is used for sign-in. Cloud tokens stay in this service's memory. Restarting the service clears your session.</p>
+      </section>
+    </main>
+    <footer>TemperMe is an independent interface. Controls connect through iApartments' cloud. The computer running TemperMe must stay on for browser controls to work. Your thermostat continues following its settings when that computer is off.</footer>
+  </div>
+  <script>
+    'use strict';
+    const get = (id) => document.getElementById(id);
+    const card = get('connection-card');
+    let busy = false;
+    let thermostat = null;
+    let fanDirty = false;
+    const modeNames = { off: 'Off', fan_only: 'Fan only', cool: 'Cool', heat: 'Heat', heat_cool: 'Heat & cool' };
+    const displayModeNames = { ...modeNames, emergency_heat: 'Emergency heat', unknown: 'Unknown' };
+
+    function setBusy(value) {
+      busy = value;
+      card.setAttribute('aria-busy', String(value));
+      card.querySelectorAll('button, input, select').forEach((element) => { element.disabled = value; });
+      get('login-button').textContent = value ? 'Connecting...' : 'Connect to iApartments';
+      get('mfa-button').textContent = value ? 'Verifying...' : 'Verify code';
+      get('apply-button').textContent = value ? 'Please wait...' : 'Apply settings';
+      updateControlState();
+    }
+
+    function clearError() {
+      get('error').hidden = true;
+      get('error').textContent = '';
+    }
+
+    function showError(error) {
+      get('error').textContent = error instanceof Error ? error.message : 'The connection could not be completed.';
+      get('error').hidden = false;
+    }
+
+    async function request(path, body) {
+      let response;
+      try {
+        response = await fetch(path, {
+          method: body === undefined ? 'GET' : 'POST',
+          credentials: 'same-origin',
+          cache: 'no-store',
+          headers: body === undefined ? { Accept: 'application/json' } : { Accept: 'application/json', 'Content-Type': 'application/json' },
+          body: body === undefined ? undefined : JSON.stringify(body)
+        });
+      } catch {
+        throw new Error('Cannot reach the local service. Check that TemperMe is running, then try again.');
+      }
+      if (response.status === 401 && ['/api/status', '/api/refresh', '/api/thermostat'].includes(path)) render({ stage: 'signed_out' });
+      let result;
+      try { result = await response.json(); }
+      catch { throw new Error('The local service returned an unreadable response. Please try again.'); }
+      if (!response.ok || result.error) {
+        throw new Error(typeof result.error === 'string' ? result.error : 'The request could not be completed. Please try again.');
+      }
+      return result;
+    }
+
+    function hasTemperature(value) { return typeof value === 'number' && Number.isFinite(value); }
+
+    function formatTemperature(value, unit) {
+      return hasTemperature(value) ? value.toLocaleString(undefined, { maximumFractionDigits: 1 }) + '\u00b0' + unit : 'Unavailable';
+    }
+
+    function updateControlState() {
+      const mode = get('mode').value;
+      const allowed = thermostat?.canControl === true;
+      const single = mode === 'heat' || mode === 'cool';
+      const range = mode === 'heat_cool';
+      get('single-target-field').hidden = !single;
+      get('range-target-fields').hidden = !range;
+      get('fan-field').hidden = !single && !range;
+      get('fan').disabled = busy || !allowed || (!single && !range);
+      get('mode-help').hidden = mode !== 'fan_only' && mode !== 'off';
+      get('mode-help').textContent = mode === 'fan_only'
+        ? 'Turns heating and cooling off and sets the fan to run continuously.'
+        : mode === 'off' ? 'Turns heating and cooling off and sets the fan to Auto. The fan may continue briefly during the system\'s shutdown delay.' : '';
+      get('mode').disabled = busy || !allowed;
+      get('apply-button').disabled = busy || !allowed || !Object.hasOwn(modeNames, mode);
+      [['target', single], ['heat', range], ['cool', range]].forEach(([id, relevant]) => {
+        get(id).disabled = busy || !allowed || !relevant;
+        get(id).required = allowed && relevant;
+      });
+    }
+
+    function renderThermostat(value) {
+      thermostat = value && typeof value === 'object' ? value : null;
+      fanDirty = false;
+      ['target', 'heat', 'cool'].forEach((id) => {
+        [['min', thermostat?.minimumTemperature], ['max', thermostat?.maximumTemperature]].forEach(([attribute, limit]) => {
+          if (hasTemperature(limit)) get(id).setAttribute(attribute, String(limit));
+          else get(id).removeAttribute(attribute);
+        });
+      });
+      get('thermostat-view').hidden = !thermostat;
+      get('thermostat-form').hidden = thermostat?.canControl !== true;
+      get('connected-heading').textContent = thermostat ? 'Your thermostat' : 'Your account is signed in';
+      get('availability-message').textContent = thermostat?.canControl === true
+        ? 'Set your temperature, choose a comfortable range, or circulate air with Fan only.'
+        : thermostat ? 'Thermostat readings are available. Controls will become available after the connection is verified.'
+        : 'Thermostat controls will become available after the connection is verified.';
+      if (!thermostat) {
+        ['current-temperature', 'current-mode', 'current-fan', 'fan-activity', 'hvac-activity', 'target-temperature', 'heat-target', 'cool-target', 'updated-at'].forEach((id) => { get(id).textContent = 'Unavailable'; });
+        ['mode', 'fan', 'target', 'heat', 'cool'].forEach((id) => { get(id).value = ''; });
+        get('fan-activity-reading').hidden = true;
+        get('hvac-activity-reading').hidden = true;
+        get('updated-at').removeAttribute('datetime');
+        updateControlState();
+        return;
+      }
+      const unit = thermostat.unit === 'C' ? 'C' : 'F';
+      get('current-temperature').textContent = formatTemperature(thermostat.currentTemperature, unit);
+      get('current-temperature').classList.toggle('unavailable', !hasTemperature(thermostat.currentTemperature));
+      get('current-mode').textContent = displayModeNames[thermostat.mode] || 'Unavailable';
+      const fanNames = { auto: 'Auto', on: 'On', off: 'Off', circulate: 'Circulate' };
+      get('current-fan').textContent = typeof thermostat.fan === 'string' && thermostat.fan ? (fanNames[thermostat.fan] || thermostat.fan) : 'Unavailable';
+      get('fan-activity-reading').hidden = typeof thermostat.fanRunning !== 'boolean';
+      get('fan-activity').textContent = thermostat.fanRunning === true ? 'Running' : thermostat.fanRunning === false ? 'Stopped' : 'Unavailable';
+      const activityNames = { off: 'Idle', heat: 'Heating', cool: 'Cooling' };
+      get('hvac-activity-reading').hidden = !Object.hasOwn(activityNames, thermostat.activity);
+      get('hvac-activity').textContent = activityNames[thermostat.activity] || 'Unavailable';
+      get('target-temperature').textContent = formatTemperature(thermostat.targetTemperature, unit);
+      get('heat-target').textContent = formatTemperature(thermostat.heatTarget, unit);
+      get('cool-target').textContent = formatTemperature(thermostat.coolTarget, unit);
+      const rangeMode = thermostat.mode === 'heat_cool';
+      get('single-reading').hidden = rangeMode || thermostat.mode === 'off' || thermostat.mode === 'fan_only';
+      get('heat-reading').hidden = !rangeMode;
+      get('cool-reading').hidden = !rangeMode;
+      const updated = thermostat.updatedAt ? new Date(thermostat.updatedAt) : null;
+      const validDate = updated && Number.isFinite(updated.getTime());
+      get('updated-at').textContent = validDate ? updated.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : 'Unavailable';
+      if (validDate) get('updated-at').dateTime = updated.toISOString();
+      else get('updated-at').removeAttribute('datetime');
+      get('readonly-note').hidden = thermostat.canControl === true || (typeof thermostat.controlMessage === 'string' && Boolean(thermostat.controlMessage));
+      card.querySelectorAll('[data-unit]').forEach((element) => { element.textContent = unit; });
+      get('mode').value = Object.hasOwn(modeNames, thermostat.mode) ? thermostat.mode : '';
+      const knownFanMode = thermostat.fanMode === 'auto' || thermostat.fanMode === 'on';
+      get('keep-fan-option').hidden = knownFanMode;
+      get('keep-fan-option').textContent = thermostat.fanMode === 'circulate' ? 'Keep current circulation setting' : 'Keep current fan setting';
+      get('fan').value = knownFanMode ? thermostat.fanMode : 'keep';
+      get('target').value = hasTemperature(thermostat.targetTemperature) ? thermostat.targetTemperature : '';
+      get('heat').value = hasTemperature(thermostat.heatTarget) ? thermostat.heatTarget : '';
+      get('cool').value = hasTemperature(thermostat.coolTarget) ? thermostat.coolTarget : '';
+      updateControlState();
+    }
+
+    function render(status) {
+      const stages = { signed_out: 'login', challenge: 'challenge', connected: 'connected' };
+      if (!status || !Object.hasOwn(stages, status.stage)) throw new Error('The local service returned an unknown connection state.');
+      ['loading', 'login', 'challenge', 'connected'].forEach((name) => { get(name + '-view').hidden = stages[status.stage] !== name; });
+      get('status-badge').dataset.stage = status.stage;
+      get('status-text').textContent = { signed_out: 'Not signed in', challenge: 'Verification required', connected: 'Account signed in' }[status.stage];
+      get('password').value = '';
+      if (status.stage === 'challenge') {
+        const challenge = status.challenge;
+        let instruction = 'Enter the verification code requested by iApartments.';
+        if (challenge === 'SMS_MFA' || challenge?.name === 'SMS_MFA') instruction = 'Enter the verification code sent to your phone by iApartments.';
+        if (challenge === 'SOFTWARE_TOKEN_MFA' || challenge?.name === 'SOFTWARE_TOKEN_MFA') instruction = 'Enter the current verification code from your authenticator.';
+        get('challenge-description').textContent = typeof status.message === 'string' && status.message ? status.message : instruction;
+      }
+      if (status.stage === 'connected') {
+        get('account-email').textContent = status.account?.email || 'your resident account';
+        renderThermostat(status.thermostat);
+        get('connection-message').textContent = typeof thermostat?.controlMessage === 'string' && thermostat.controlMessage ? thermostat.controlMessage : typeof status.message === 'string' && status.message ? status.message : thermostat ? 'Showing the latest thermostat readings received by this service.' : 'Account sign-in is complete. Thermostat access still needs to be verified before controls are available.';
+      } else {
+        get('account-email').textContent = '';
+        get('connection-message').textContent = '';
+        renderThermostat(null);
+      }
+      if (status.stage === 'signed_out') get('code').value = '';
+    }
+
+    async function run(action, focusAfter) {
+      if (busy) return;
+      clearError();
+      setBusy(true);
+      let succeeded = false;
+      try { render(await action()); succeeded = true; }
+      catch (error) { showError(error); }
+      finally { setBusy(false); }
+      if (succeeded && focusAfter) {
+        if (!get('challenge-view').hidden) get('code').focus();
+        else if (!get('login-view').hidden) get('email').focus();
+        else if (!get('connected-view').hidden) get('refresh-button').focus();
+      }
+      return succeeded;
+    }
+
+    get('login-form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (busy) return;
+      const payload = { email: get('email').value.trim(), password: get('password').value };
+      get('password').value = '';
+      void run(() => request('/api/login', payload), true);
+    });
+
+    get('mfa-form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (busy) return;
+      const code = get('code').value.trim();
+      get('code').value = '';
+      void run(() => request('/api/mfa', { code }), true);
+    });
+
+    card.querySelectorAll('[data-logout]').forEach((button) => {
+      button.addEventListener('click', () => { void run(() => request('/api/logout', {}), true); });
+    });
+
+    get('refresh-button').addEventListener('click', () => { void run(() => request('/api/refresh', {})); });
+    get('mode').addEventListener('change', updateControlState);
+    get('fan').addEventListener('change', () => { fanDirty = true; });
+    get('thermostat-form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (busy || thermostat?.canControl !== true) return;
+      const mode = get('mode').value;
+      if (!Object.hasOwn(modeNames, mode)) return;
+      const payload = { mode };
+      if (mode === 'heat' || mode === 'cool') payload.targetTemperature = get('target').valueAsNumber;
+      if (mode === 'heat_cool') {
+        payload.heatTarget = get('heat').valueAsNumber;
+        payload.coolTarget = get('cool').valueAsNumber;
+      }
+      if (fanDirty && (mode === 'heat' || mode === 'cool' || mode === 'heat_cool')) {
+        const fan = get('fan').value;
+        if (fan === 'auto' || fan === 'on') payload.fan = fan;
+      }
+      void run(() => request('/api/thermostat', payload));
+    });
+
+    async function checkStatus() {
+      get('retry-button').hidden = true;
+      const succeeded = await run(() => request('/api/status'));
+      if (!succeeded && !get('loading-view').hidden) {
+        get('status-text').textContent = 'Service unavailable';
+        get('retry-button').hidden = false;
+      }
+    }
+
+    get('retry-button').addEventListener('click', () => { void checkStatus(); });
+    void checkStatus();
+  </script>
+</body>
+</html>
