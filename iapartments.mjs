@@ -199,7 +199,7 @@ async function applyThermostatSettings(session, input) {
   const { desired, commands } = commandSequence(input, found.reported);
   if (matches(found.reported, desired)) {
     pendingCommands.set(profile.hubId, { desired, unchanged: true, sentAt: Date.now() });
-    return;
+    return { commandSent: false };
   }
   const connection = await openResidentMqtt({ idToken, hubId: profile.hubId, assignedHubId: profile.hubId, assignedThingName: found.device.thingName, residentUserId: profile.userId });
   const pending = { desired, sentAt: Date.now(), failed: false };
@@ -219,4 +219,5 @@ async function applyThermostatSettings(session, input) {
   }
   // The ordinary follow-up read reports confirmation only when state.reported matches.
   await new Promise(resolve => setTimeout(resolve, 1500));
+  return { commandSent: true };
 }

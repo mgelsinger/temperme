@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/media/hero.svg" alt="TemperMe - your thermostat, in your browser" width="100%">
+  <img src="docs/media/dashboard.png" alt="The TemperMe dashboard with interactive temperature controls" width="100%">
 </p>
 
 <p align="center">
@@ -20,6 +20,8 @@
 
 TemperMe is an independent browser interface for **iApartments Gen1 thermostats**, initially verified with the **TN100/24/BK**. Run it directly with Node.js for one computer, or use the included Docker and HTTPS configuration to reach it from computers on your LAN.
 
+**Beta · MIT licensed.** The dashboard adapts to desktop, tablet, and phone screens. Screenshots below show the actual application with synthetic data. Hardware validation beyond cooling remains limited.
+
 **Self-hosted interface, cloud-connected controls.** You need an existing iApartments resident account and internet access. TemperMe uses the vendor's undocumented cloud APIs; direct local thermostat control is not implemented. No phone app or Android emulator is needed to run TemperMe.
 
 ## See it in action
@@ -28,13 +30,13 @@ TemperMe is an independent browser interface for **iApartments Gen1 thermostats*
 
 **[Download the 25-second MP4 walkthrough](https://github.com/mgelsinger/temperme/raw/refs/heads/main/docs/media/demo.mp4)** · All screenshots and recordings use synthetic demonstration data. They show the real interface without a live account or thermostat.
 
-![TemperMe dashboard with current temperature, equipment activity, and temperature controls](docs/media/dashboard.png)
+[See the phone layout](docs/media/mobile.png) · [See the temperature range controls](docs/media/range.png)
 
 ## Comfortable by design
 
 | Control | What it does |
 | --- | --- |
-| **Cool / Heat** | Set a target in whole degrees Fahrenheit. |
+| **Cool / Heat** | Adjust the target dial with a slider, step buttons, or a direct input in whole degrees Fahrenheit. |
 | **Heat & cool** | Set a lower heating target and upper cooling target, at least 3°F apart. |
 | **Fan only** | Turn heating and cooling off and run the fan continuously. Temperature targets stay intact. |
 | **Off** | Turn heating and cooling off and return the fan to Auto. Equipment shutdown delays still apply. |
@@ -43,7 +45,9 @@ TemperMe is an independent browser interface for **iApartments Gen1 thermostats*
 
 ![Fan-only mode selected in TemperMe](docs/media/fan-only.png)
 
-The thermostat keeps managing temperature and equipment timing. Closing the browser or stopping TemperMe leaves its last settings in place. Readings refresh when you click **Refresh readings** or submit settings; they are not a continuous live feed.
+Changes remain a draft until you select **Apply settings**. The thermostat keeps managing temperature and equipment timing after you close the browser or stop TemperMe.
+
+The dashboard refreshes readings every minute while visible, pauses automatic refresh during edits, and backs off after failures. You can also select **Refresh readings**. This is periodic polling, not a continuous live feed. Failed reads are marked stale and do not retain an earlier success message.
 
 ## Quick start
 
@@ -88,7 +92,7 @@ Keep the server awake and Docker running. Each browser signs in independently. S
 ## Your first adjustment
 
 1. Sign in and wait for the assigned thermostat to appear.
-2. Choose a mode and, where applicable, a target or temperature range.
+2. Choose a mode and adjust the dial or temperature range. The preview changes immediately; the thermostat has not changed yet.
 3. Select **Apply settings**. A sent command is confirmed only when the thermostat reports matching settings.
 4. If confirmation is pending, wait a few seconds and select **Refresh readings**.
 
@@ -135,3 +139,7 @@ Tests mock cloud operations and do not operate a real thermostat. They cover tem
 - [Report a reproducible issue](https://github.com/mgelsinger/temperme/issues)
 
 Built for the simple pleasure of changing the temperature from the computer you are already using.
+
+## License
+
+TemperMe is available under the [MIT license](LICENSE). Third-party dependencies retain their respective licenses.

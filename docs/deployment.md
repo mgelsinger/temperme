@@ -123,6 +123,8 @@ Do not put a resident username, password, token, or device identifier in `.env`.
 | Account signs in, but no thermostat appears | Try Refresh readings. Confirm the account has an assigned Gen1 built-in thermostat. A successful login alone does not establish compatible device access. |
 | Readings work, but controls are unavailable | The cloud control connection could not be verified. Check internet connectivity, then refresh. Do not reset or re-pair the thermostat to troubleshoot this application. |
 | Settings are sent but not confirmed | Wait briefly and refresh. If the device still does not report the requested settings, check the wall display before retrying. |
+| Readings are marked stale and controls are disabled | The last cloud read failed. Previous readings remain visible with their original timestamp. Use Refresh readings to recover before sending another command. |
+| Automatic refresh is paused | Finish or discard your draft. Polling also pauses while another request runs or the page is hidden. Failures increase the retry interval. |
 | Fan still runs after selecting Off | Off sets the fan to Auto. The equipment may retain its normal shutdown delay; compare the fan setting with actual fan activity. |
 | Logged out after an update or restart | Expected: cloud tokens and sessions live only in app memory. Reload the page and sign in again. |
 | A password reset or account setup is required | Complete the official iApartments account flow, then return to TemperMe. |

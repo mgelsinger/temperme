@@ -4,6 +4,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund && npm cache clean --force
 COPY server.mjs network-config.mjs iapartments.mjs cloud-mqtt.mjs ./
+COPY LICENSE ./
 COPY public ./public
 USER node
 EXPOSE 8765

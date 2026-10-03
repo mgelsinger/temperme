@@ -1,6 +1,7 @@
 **
 !package.json
 !package-lock.json
+!LICENSE
 !server.mjs
 !network-config.mjs
 !iapartments.mjs

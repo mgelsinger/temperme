@@ -57,6 +57,14 @@ Writes use separate mode, temperature, and fan messages in that order. Heat/cool
 
 Messages publish only to the assigned thing's shadow-update route through the resident application namespace. A successful MQTT acknowledgment establishes message receipt by the broker. The interface calls a change confirmed only when a subsequent reported-state read matches all requested settings. That confirmation is separate from physical heating, cooling, or fan activity.
 
+## Dashboard state
+
+The dashboard keeps editable settings separate from the last reported state. Mode buttons, temperature sliders, and step controls change a local draft. Only Apply settings sends a thermostat command. A refresh cannot silently submit that draft.
+
+Visible, signed-in pages check for new readings about once per minute. Automatic reads pause while settings are being edited or a request is in progress, and retry less often after failures. Hidden pages do not keep polling. The timestamp indicates the service's last successful cloud read, not the time of a new measurement at the thermostat.
+
+Read status is explicit: fresh, stale, or unavailable. A failed read preserves the previous readings and their timestamp for context but removes old confirmation text and disables controls until a successful read. If a command was sent before its follow-up read failed, the response describes it as unconfirmed rather than claiming no settings changed.
+
 ## Scope and evidence
 
 The initial hardware target is TN100/24/BK, FCC ID 2AVIHTN12A. The [manufacturer manual](https://fccid.io/2AVIHTN12A/User-Manual/15-TN10024BK-UserMan-US-4736643.pdf) describes its native heating/cooling modes and separate range targets. Protocol investigation included static inspection of a resident application archive and cross-checking public authentication identifiers against the vendor's web client. Running an emulator is not part of the application.

@@ -70,22 +70,40 @@ function reset(session) {
   session.deviceDetails = null;
   session.discoveryMessage = null;
   session.thermostat = null;
+  session.readState = 'unavailable';
+  session.lastReadAt = null;
 }
 
 function status(session) {
   if (session.stage === 'connected') {
     return {
       stage: 'connected', account: { email: session.email }, thermostat: session.thermostat || null,
-      message: session.discoveryMessage || 'Sign-in verified. The thermostat connection still needs verification; no device settings have been changed.',
+      readState: session.readState || 'unavailable', lastReadAt: session.lastReadAt || null,
+      message: session.discoveryMessage || 'Sign-in verified. Waiting for thermostat readings.',
     };
   }
   return { stage: session.stage, challenge: session.challenge || undefined, thermostat: null };
 }
 
-async function discover(session) {
+function clearConfirmation(session, message) {
+  if (session.thermostat) session.thermostat = { ...session.thermostat, controlMessage: undefined };
+  session.discoveryMessage = message;
+}
+
+function invalidateRead(session, message) {
+  clearConfirmation(session, message);
+  session.readState = session.thermostat ? 'stale' : 'unavailable';
+  if (session.thermostat) session.thermostat.canControl = false;
+}
+
+async function discover(session, { commandSent = false } = {}) {
   const attempt = session.attempt;
+  const active = () => attempt === session.attempt && session.stage === 'connected';
+  if (!active()) return;
+  clearConfirmation(session, commandSent ? 'Command sent. Checking thermostat readings.' : 'Refreshing thermostat readings.');
   try {
     const api = await adapter();
+    if (!active()) return;
     // Cognito refreshes expired sessions using the in-memory refresh token.
     const tokens = await new Promise((resolve, reject) => {
       const deadline = setTimeout(() => reject(new Error('Session refresh timed out')), 30000);
@@ -94,26 +112,36 @@ async function discover(session) {
         error ? reject(error) : resolve(value);
       });
     });
-    if (attempt !== session.attempt) return;
+    if (!active()) return;
     session.tokens = tokens;
     const idToken = session.tokens.getIdToken().getJwtToken();
     const profile = session.profile || await api.getResidentProfile(idToken);
-    if (attempt !== session.attempt) return;
+    if (!active()) return;
     session.profile = profile;
     if (typeof profile.hubId !== 'string' || !profile.hubId) {
-      session.discoveryMessage = 'Sign-in succeeded, but this resident profile did not identify an assigned thermostat hub. No device settings were changed.';
-      return;
+      const error = new Error('Missing assigned hub');
+      error.diagnostic = { kind: 'missing_hub' };
+      throw error;
     }
     const details = await api.getResidentDeviceDetails(idToken, profile.hubId, profile.zipcode);
-    if (attempt !== session.attempt) return;
+    if (!active()) return;
     session.deviceDetails = details;
-    session.thermostat = api.mapThermostat(details);
-    session.discoveryMessage = session.thermostat ? 'Thermostat readings received.' : 'Sign-in and the assigned-device read succeeded. Thermostat readings and controls still need verification. No device settings were changed.';
+    const thermostat = api.mapThermostat(details);
+    if (!thermostat) {
+      const error = new Error('Unsupported thermostat readings');
+      error.diagnostic = { kind: 'unsupported_readings' };
+      throw error;
+    }
+    session.thermostat = thermostat;
+    session.readState = 'fresh';
+    session.lastReadAt = thermostat.updatedAt;
+    session.discoveryMessage = thermostat.controlMessage || (commandSent ? 'Command sent. Readings received, but the requested settings have not been confirmed yet. Refresh readings shortly.' : 'Thermostat readings received.');
   } catch (error) {
-    if (attempt !== session.attempt) return;
+    if (!active()) return;
     const detail = error.diagnostic;
-    const reason = detail?.kind === 'empty' ? 'the device service returned an empty response' : detail?.kind === 'invalid_json' ? 'the device service returned an unexpected response format' : detail?.code === 'TIMEOUT' ? 'the device service did not respond within 45 seconds' : detail?.kind === 'http' ? `the device service returned HTTP ${detail.status}` : 'the device read failed';
-    session.discoveryMessage = `Sign-in succeeded, but ${reason}. You can retry with Refresh readings. No device settings were changed.`;
+    const reason = detail?.kind === 'empty' ? 'the device service returned an empty response' : detail?.kind === 'invalid_json' ? 'the device service returned an unexpected response format' : detail?.code === 'TIMEOUT' ? 'the device service did not respond within 45 seconds' : detail?.kind === 'http' ? `the device service returned HTTP ${detail.status}` : detail?.kind === 'missing_hub' ? 'this resident profile did not identify an assigned thermostat hub' : detail?.kind === 'unsupported_readings' ? 'the assigned-device read did not include supported thermostat readings' : 'the device read failed';
+    const outcome = commandSent ? `Command sent, but ${reason}. The requested settings could not be confirmed.` : `Could not refresh thermostat readings because ${reason}.`;
+    invalidateRead(session, `${outcome} ${session.thermostat ? 'Displayed readings are from the last successful read. ' : ''}Use Refresh readings before sending another command.`);
   }
 }
 
@@ -229,14 +257,23 @@ const server = http.createServer(async (req, res) => {
       session.busy = true;
       try {
         if (path === '/api/thermostat') {
+          if (session.readState !== 'fresh' || !session.thermostat?.canControl) return send(res, 409, { ...status(session), error: 'Refresh readings to verify thermostat controls before trying again.' });
+          clearConfirmation(session, 'Sending requested settings.');
           const api = await adapter();
-          if (!session.thermostat?.canControl || typeof api.setThermostat !== 'function') return send(res, 409, { error: 'Thermostat controls are still being verified' });
-          await api.setThermostat(session, input);
+          if (attempt !== session.attempt || session.stage !== 'connected') return send(res, 200, status(session));
+          if (typeof api.setThermostat !== 'function') throw new Error('Thermostat controls are unavailable');
+          const result = await api.setThermostat(session, input);
+          if (attempt !== session.attempt || session.stage !== 'connected') return send(res, 200, status(session));
+          await discover(session, { commandSent: result?.commandSent === true });
+        } else {
+          await discover(session);
         }
-        await discover(session);
         return send(res, 200, status(session));
       } catch (error) {
-        return send(res, 400, { error: error.userMessage || 'The thermostat request could not be completed' });
+        if (attempt !== session.attempt || session.stage !== 'connected') return send(res, 200, status(session));
+        const message = error.userMessage || 'The thermostat request could not be completed. Some settings may have changed. Refresh readings before trying again.';
+        invalidateRead(session, message);
+        return send(res, 400, { ...status(session), error: message });
       } finally { if (attempt === session.attempt) session.busy = false; }
     }
     if (path === '/api/login') {
