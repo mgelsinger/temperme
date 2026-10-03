@@ -109,7 +109,35 @@ For native Node, stop the running process, pull the update, run `npm ci --ignore
 
 Update `TEMPERME_LAN_IP` in `.env` and run `docker compose up -d`. Open the new HTTPS address. Caddy issues a certificate for the new address under the existing CA, so an intact Caddy data volume avoids repeating root trust setup.
 
-Do not put a resident username, password, token, or device identifier in `.env`. This deployment only needs the host's LAN address there. `.env` and `certificates/` are excluded from Git and from the image build.
+Do not put a resident username, password, token, or device identifier in `.env`. It holds the host's LAN address and, optionally, the default weather ZIP. `.env` and `certificates/` are excluded from Git and from the image build.
+
+## Weather location
+
+After signing in, enter a five-digit US ZIP in the weather banner. The preference stays in that browser until you change it or select **Use host default**. Weather uses no API key or browser location permission. A ZIP chosen in one browser does not change another browser's preference.
+
+For a shared Docker default, add this optional setting to your private `.env` file:
+
+```dotenv
+# Example only. Replace with your ZIP, or leave blank to choose in the UI.
+TEMPERME_WEATHER_ZIP=12345
+```
+
+Run `docker compose up -d` to apply an environment change. Recreating the app clears resident sessions, so sign in again. The public `.env.example` leaves the location blank, and a saved browser ZIP takes priority over the server default.
+
+For native Node, set the environment variable before starting. The native service does not automatically load `.env`. In PowerShell:
+
+```powershell
+$env:TEMPERME_WEATHER_ZIP = '12345'
+npm.cmd start
+```
+
+On macOS or Linux:
+
+```sh
+TEMPERME_WEATHER_ZIP=12345 npm start
+```
+
+The server needs HTTPS access to `geocoding-api.open-meteo.com` and `api.open-meteo.com`. Weather is optional and has no effect on thermostat operation. Forecasts refresh about every 15 minutes while the page is visible. The included free provider is intended for [personal, non-commercial use](https://open-meteo.com/en/terms).
 
 ## Troubleshooting
 
@@ -125,6 +153,9 @@ Do not put a resident username, password, token, or device identifier in `.env`.
 | Settings are sent but not confirmed | Wait briefly and refresh. If the device still does not report the requested settings, check the wall display before retrying. |
 | Readings are marked stale and controls are disabled | The last cloud read failed. Previous readings remain visible with their original timestamp. Use Refresh readings to recover before sending another command. |
 | Automatic refresh is paused | Finish or discard your draft. Polling also pauses while another request runs or the page is hidden. Failures increase the retry interval. |
+| Weather cannot find a ZIP | Enter a five-digit US ZIP. Postal codes absent from the provider's location data cannot be resolved. |
+| Weather is stale or unavailable | Check internet access to Open-Meteo and try again later. Older forecasts are labeled, and thermostat controls remain independent. |
+| Weather shows a different location than the server default | A saved browser ZIP takes priority. Select Use host default in the weather panel to remove that override. |
 | Fan still runs after selecting Off | Off sets the fan to Auto. The equipment may retain its normal shutdown delay; compare the fan setting with actual fan activity. |
 | Logged out after an update or restart | Expected: cloud tokens and sessions live only in app memory. Reload the page and sign in again. |
 | A password reset or account setup is required | Complete the official iApartments account flow, then return to TemperMe. |

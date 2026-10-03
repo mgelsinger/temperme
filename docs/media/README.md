@@ -1,10 +1,10 @@
 # Documentation media
 
-The README screenshots and demonstration show the actual `public/index.html` interface. Every account, reading, command response, and activity indicator in this folder comes from the local synthetic fixture in `scripts/media/demo-server.mjs`. The fixture never imports the cloud adapter and cannot control hardware. It uses `demo@example.com` and sample temperatures, and its content security policy blocks external browser resources and API requests.
+The README screenshots and demonstration show the actual `public/index.html` interface. Every account, reading, command response, weather forecast, and activity indicator in this folder comes from the local synthetic fixture in `scripts/media/demo-server.mjs`. The fixture never imports the cloud adapter and cannot control hardware. It uses `demo@example.com`, sample temperatures, and a fictional forecast labeled `Demo location` with placeholder ZIP `12345`. That ZIP is never sent to a weather provider. Its content security policy blocks external browser resources and API requests.
 
 | File | Content |
 | --- | --- |
-| `dashboard.png` | The actual desktop dashboard with cooling selected. |
+| `dashboard.png` | The actual desktop dashboard with cooling selected and the hourly weather banner. |
 | `fan-only.png` | Fan only with simulated fan activity and idle heating/cooling. |
 | `range.png` | Heating and cooling range controls. |
 | `mobile.png` | The actual interface at a 390-pixel phone viewport. |
@@ -12,7 +12,7 @@ The README screenshots and demonstration show the actual `public/index.html` int
 | `demo.mp4` | The same 25-second demonstration in H.264 MP4. |
 | `hero.svg` | The original conceptual illustration, retained for provenance and no longer used as the README hero. |
 
-The current assets were captured with browser automation in a separate demo tab, using only the synthetic fixture. No production service, resident account, cloud endpoint, thermostat, device identifier, saved credential, or other browser tab was accessed. The page is the product UI without injected presentation graphics. The simulated acknowledgements and activity do not establish physical hardware support.
+The current assets were captured with browser automation in a separate demo tab, using only the synthetic fixture. No production service, resident account, cloud endpoint, thermostat, device identifier, saved credential, real location, weather provider, or other browser tab was accessed. The page is the product UI without injected presentation graphics. The simulated acknowledgements and activity do not establish physical hardware support. The sample forecast is illustrative and does not describe observed or predicted weather at the placeholder ZIP.
 
 ## Regenerate
 

@@ -25,7 +25,7 @@ const stills = [];
 try {
   fixture = await startDemoServer();
   browser = await chromium.launch({ channel: process.env.TEMPERME_MEDIA_BROWSER || 'chrome', headless: true });
-  context = await browser.newContext({ viewport: { width: 1280, height: 1000 }, deviceScaleFactor: 1, locale: 'en-US', timezoneId: 'UTC', colorScheme: 'light' });
+  context = await browser.newContext({ viewport: { width: 1280, height: 1200 }, deviceScaleFactor: 1, locale: 'en-US', timezoneId: 'UTC', colorScheme: 'light' });
   const page = await context.newPage();
   page.on('pageerror', (error) => errors.push(error.message));
   await context.route('**/*', (route) => new URL(route.request().url()).origin === new URL(fixture.url).origin ? route.continue() : route.abort());
@@ -47,6 +47,9 @@ try {
   };
   await page.goto(fixture.url);
   await page.locator('#thermostat-view').waitFor({ state: 'visible' });
+  await page.locator('#weather-forecast').waitFor({ state: 'visible' });
+  assert.equal(await page.locator('#weather-location').textContent(), 'Demo location');
+  assert.equal(await page.locator('#weather-hours > li').count(), 12);
   await capture('dashboard.png', 4, 'dashboard.png');
   await page.locator('#target').fill('72');
   assert.equal(fixture.commands.length, 0, 'Editing must not send a command.');

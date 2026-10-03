@@ -10,6 +10,7 @@ flowchart LR
     T -->|Resident sign-in and refresh| C[Amazon Cognito]
     T -->|Assigned profile and device reads| A[iApartments API]
     T -->|Signed MQTT over WebSockets| I[AWS IoT]
+    T -->|Optional ZIP lookup and forecast| W[Open-Meteo]
     I --> H[Assigned thermostat]
     H -->|Reported state| A
 ```
@@ -24,6 +25,7 @@ The diagram summarizes the application's view of the cloud path. Vendor infrastr
 | [`network-config.mjs`](../network-config.mjs) | Bind configuration, exact Host/Origin validation, and session cookie policy. |
 | [`iapartments.mjs`](../iapartments.mjs) | Assigned-device reads, Gen1 state mapping, input validation, and command sequencing. |
 | [`cloud-mqtt.mjs`](../cloud-mqtt.mjs) | Cognito temporary credentials, signed AWS IoT connection, and restricted shadow publishing. |
+| [`weather.mjs`](../weather.mjs) | US ZIP lookup, forecast normalization, provider limits, and a bounded memory cache. |
 | [`public/index.html`](../public/index.html) | Responsive interface, accessible forms, and same-origin API requests. |
 | [`compose.yaml`](../compose.yaml) / [`Caddyfile`](../Caddyfile) | Optional LAN HTTPS deployment. |
 | [`test/`](../test/) | Offline tests using synthetic fixtures and mocked cloud operations. |
@@ -64,6 +66,16 @@ The dashboard keeps editable settings separate from the last reported state. Mod
 Visible, signed-in pages check for new readings about once per minute. Automatic reads pause while settings are being edited or a request is in progress, and retry less often after failures. Hidden pages do not keep polling. The timestamp indicates the service's last successful cloud read, not the time of a new measurement at the thermostat.
 
 Read status is explicit: fresh, stale, or unavailable. A failed read preserves the previous readings and their timestamp for context but removes old confirmation text and disables controls until a successful read. If a command was sent before its follow-up read failed, the response describes it as unconfirmed rather than claiming no settings changed.
+
+## Weather banner
+
+The authenticated `/api/weather` route accepts an optional five-digit US ZIP. A browser preference overrides the optional `TEMPERME_WEATHER_ZIP` server default. The weather module resolves an exact US postal-code match through Open-Meteo's GeoNames-based geocoder, then requests Fahrenheit forecasts from a fixed forecast endpoint. It does not use the resident profile or thermostat's location.
+
+Daily highs and lows follow the ZIP's local calendar date. Hourly timestamps are returned as UTC ISO values and formatted in the location's IANA time zone, including date changes. Null provider values remain unavailable rather than becoming zero. Current outdoor conditions are weather-model estimates, separate from the measured indoor thermostat temperature.
+
+The cache and provider-request limits are shared across local sessions to avoid duplicate calls. Older results are identified as stale; their fetch timestamp is preserved. Weather requests have an independent browser lifecycle, so loading or failing weather cannot disable HVAC controls or overwrite a thermostat draft. Late responses from an old ZIP or signed-out session are discarded.
+
+The browser stores only the chosen ZIP in `localStorage`. Forecast data stays in process/page memory, and weather responses retain `Cache-Control: no-store`. Browser polling pauses when hidden and refreshes about every 15 minutes while visible. The weather banner displays provider attribution; see [Open-Meteo's forecast documentation](https://open-meteo.com/en/docs) and [geocoding documentation](https://open-meteo.com/en/docs/geocoding-api).
 
 ## Scope and evidence
 

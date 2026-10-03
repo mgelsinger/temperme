@@ -49,6 +49,16 @@ Changes remain a draft until you select **Apply settings**. The thermostat keeps
 
 The dashboard refreshes readings every minute while visible, pauses automatic refresh during edits, and backs off after failures. You can also select **Refresh readings**. This is periodic polling, not a continuous live feed. Failed reads are marked stale and do not retain an earlier success message.
 
+## Weather at a glance
+
+Enter a US ZIP code to see outdoor conditions, today's forecast high and low, and the next 12 hours of temperature, conditions, and precipitation probability. The compact banner spans the desktop dashboard; on phones it sits below the thermostat controls and the hourly strip scrolls sideways. Forecast times use the selected location's time zone.
+
+The ZIP preference is saved in that browser. You can change it or select **Use host default**. For a shared default across your computers, set the optional `TEMPERME_WEATHER_ZIP` in your private Docker `.env` file, then recreate the app container. The public example leaves it blank. See [weather configuration](docs/deployment.md#weather-location).
+
+Weather comes from [Open-Meteo](https://open-meteo.com/), with location lookup based on [GeoNames](https://www.geonames.org/). The included keyless service supports [personal, non-commercial home automation](https://open-meteo.com/en/terms); its API terms are separate from TemperMe's MIT license. Weather data is provided under [CC BY 4.0](https://open-meteo.com/en/licence).
+
+Visible pages refresh weather about every 15 minutes. Forecasts are cached only in service memory, with older results clearly marked when the provider is unavailable. Weather requests use the ZIP and its approximate coordinates, never your resident credentials. Weather does not adjust your thermostat, and a weather outage does not disable thermostat controls.
+
 ## Quick start
 
 Choose one way to run TemperMe. Both use the same interface and resident login.
@@ -100,7 +110,7 @@ Fan settings and actual activity are separate readings. For example, Auto can be
 
 ## Privacy without a database
 
-TemperMe does not write resident passwords, cloud tokens, account profiles, or thermostat readings to disk. Authentication state lives in service memory; the browser receives an opaque, HttpOnly session cookie. Application responses use `Cache-Control: no-store`, and the interface does not use browser local storage.
+TemperMe does not write resident passwords, cloud tokens, account profiles, or thermostat readings to disk. Authentication state lives in service memory; the browser receives an opaque, HttpOnly session cookie. Application responses use `Cache-Control: no-store`. The weather ZIP preference is the only value stored in browser local storage; it contains no account or thermostat data.
 
 Signing out clears that browser's server session. Restarting the service clears all sessions; reload the page and sign in again afterward. Sessions expire after eight hours of inactivity. Docker preserves Caddy's TLS certificates and keys in its own volumes, not resident credentials.
 
@@ -131,7 +141,7 @@ Run the automated suite:
 npm test
 ```
 
-Tests mock cloud operations and do not operate a real thermostat. They cover temperature conversion and limits, fan command ordering, assigned-device restrictions, MQTT transport, and host/origin/session safeguards. Node may display an experimental VM modules warning from the test harness.
+Tests mock cloud operations and do not operate a real thermostat. They cover temperature conversion and limits, fan command ordering, assigned-device restrictions, MQTT transport, and host/origin/session safeguards. Weather tests cover ZIP validation, time zones and daylight saving, missing values, caching, provider failures, and sign-out boundaries. Node may display an experimental VM modules warning from the test harness.
 
 - [Architecture and protocol notes](docs/architecture.md)
 - [Contributing and safe bug reports](CONTRIBUTING.md)

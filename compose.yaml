@@ -9,6 +9,7 @@ services:
       TEMPERME_PORT: 8765
       TEMPERME_HTTPS_PROXY: 1
       TEMPERME_PUBLIC_ORIGINS: https://${TEMPERME_LAN_IP:?Set TEMPERME_LAN_IP in .env}:9443
+      TEMPERME_WEATHER_ZIP: "${TEMPERME_WEATHER_ZIP:-}"
     read_only: true
     tmpfs:
       - /tmp:size=16m,mode=1777

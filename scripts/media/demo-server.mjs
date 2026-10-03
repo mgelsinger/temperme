@@ -14,6 +14,26 @@ const initial = () => ({
   updatedAt: new Date().toISOString(),
 });
 
+// Deliberately fictional weather. The placeholder ZIP never reaches a provider.
+const daylight = (date) => {
+  const hour = Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'America/New_York', hour: 'numeric', hourCycle: 'h23' }).format(date));
+  return hour >= 7 && hour < 19;
+};
+const initialWeather = (zip = '12345') => ({
+  state: 'fresh', zip, location: 'Demo location', timezone: 'America/New_York',
+  updatedAt: new Date().toISOString(),
+  today: { date: new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()), high: 73, low: 54 },
+  current: { temperature: 68, condition: 'Partly cloudy', icon: 'partly-cloudy', isDay: daylight(new Date()) },
+  hourly: Array.from({ length: 12 }, (_, index) => ({
+    time: new Date((Math.floor(Date.now() / 3600000) + 1 + index) * 3600000).toISOString(),
+    temperature: [68, 66, 64, 62, 61, 60, 59, 58, 58, 57, 56, 55][index],
+    precipitationProbability: [10, 10, 15, 25, 40, 55, 60, 45, 30, 20, 15, 10][index],
+    condition: index < 4 ? 'Partly cloudy' : index < 8 ? 'Light rain' : 'Cloudy',
+    icon: index < 4 ? 'partly-cloudy' : index < 8 ? 'rain' : 'cloudy',
+    isDay: daylight(new Date((Math.floor(Date.now() / 3600000) + 1 + index) * 3600000)),
+  })),
+});
+
 export async function startDemoServer() {
   let thermostat = initial();
   let device = structuredClone(thermostat);
@@ -24,6 +44,10 @@ export async function startDemoServer() {
   let failReads = false;
   let failAfterWrite = false;
   let delayMs = 0;
+  let weatherState = 'fresh';
+  let weatherFail = false;
+  let weatherDelayMs = 0;
+  let weatherOverrides = {};
   const commands = [];
   const requests = [];
   const state = () => stage === 'signed_out'
@@ -49,6 +73,7 @@ export async function startDemoServer() {
     device = structuredClone(thermostat);
     lastReadAt = thermostat.updatedAt; message = latestMessage;
     failReads = false; failAfterWrite = false; delayMs = 0;
+    weatherState = 'fresh'; weatherFail = false; weatherDelayMs = 0; weatherOverrides = {};
     commands.length = 0; requests.length = 0;
   };
   const control = (input) => {
@@ -56,6 +81,10 @@ export async function startDemoServer() {
     if (typeof input.failReads === 'boolean') failReads = input.failReads;
     if (typeof input.failAfterWrite === 'boolean') failAfterWrite = input.failAfterWrite;
     if (typeof input.delayMs === 'number') delayMs = Math.max(0, Math.min(input.delayMs, 3000));
+    if (['fresh', 'stale', 'unconfigured'].includes(input.weatherState)) weatherState = input.weatherState;
+    if (typeof input.weatherFail === 'boolean') weatherFail = input.weatherFail;
+    if (typeof input.weatherDelayMs === 'number') weatherDelayMs = Math.max(0, Math.min(input.weatherDelayMs, 3000));
+    if (input.weatherOverrides) weatherOverrides = structuredClone(input.weatherOverrides);
     if (input.thermostat) { Object.assign(thermostat, input.thermostat); Object.assign(device, input.thermostat); }
     if (input.stage === 'signed_out' || input.stage === 'connected') stage = input.stage;
     if (input.markRead) markRead(failReads);
@@ -84,6 +113,19 @@ export async function startDemoServer() {
         return;
       }
       requests.push({ method: req.method, path: req.url });
+      const requestUrl = new URL(req.url, 'http://127.0.0.1');
+      if (requestUrl.pathname === '/api/weather' && req.method === 'GET') {
+        // Snapshot before the artificial delay so race tests can distinguish responses.
+        const zip = requestUrl.searchParams.get('zip') || '12345';
+        const weather = { ...initialWeather(zip), state: weatherState, ...structuredClone(weatherOverrides) };
+        const failed = weatherFail;
+        if (weatherDelayMs) await new Promise((resolve) => setTimeout(resolve, weatherDelayMs));
+        if (!/^\d{5}$/.test(zip)) { json({ state: 'unavailable', error: 'Enter a valid five-digit US ZIP code.' }, 400); return; }
+        if (failed) { json({ state: 'unavailable', error: 'Weather is unavailable. Try again later.' }, 503); return; }
+        if (weather.state === 'unconfigured') { json({ state: 'unconfigured', defaultZip: null }); return; }
+        if (weather.state === 'stale') weather.message = 'Weather could not be refreshed. Showing the last available forecast.';
+        json(weather); return;
+      }
       if (delayMs) await new Promise((resolve) => setTimeout(resolve, delayMs));
       if (req.url === '/api/status' && req.method === 'GET') {
         json(state()); return;

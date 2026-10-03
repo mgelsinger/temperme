@@ -7,6 +7,7 @@ import { randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 import * as network from '../network-config.mjs';
+import { WeatherError } from '../weather.mjs';
 
 const sourceUrl = new URL('../server.mjs', import.meta.url);
 const source = await readFile(sourceUrl, 'utf8');
@@ -25,7 +26,7 @@ function deferred() {
 async function harness() {
   let handler;
   let cookie;
-  const state = { reads: 0, writes: 0, read: async () => ({ thermostat: fixture() }), write: async () => ({ commandSent: true }) };
+  const state = { reads: 0, writes: 0, read: async () => ({ thermostat: fixture() }), write: async () => ({ commandSent: true }), weatherReads: 0, weather: async () => ({ state: 'unconfigured', defaultZip: null }) };
   const tokens = { getIdToken: () => ({ payload: { email: 'resident@example.test' }, getJwtToken: () => 'mock-token' }) };
   class CognitoUser {
     authenticateUser(_details, callbacks) { callbacks.onSuccess(tokens); }
@@ -56,6 +57,7 @@ async function harness() {
     'node:url': { fileURLToPath },
     'amazon-cognito-identity-js': { CognitoUser, CognitoUserPool: class {}, AuthenticationDetails: class {} },
     './network-config.mjs': { ...network, networkConfig: () => network.networkConfig({}) },
+    './weather.mjs': { WeatherError, createWeatherService: () => ({ get: async zip => { state.weatherReads++; return state.weather(zip); } }) },
   };
   const module = new vm.SourceTextModule(source, {
     context, identifier: sourceUrl.href,
@@ -90,6 +92,57 @@ async function harness() {
   }
   return { state, request, login: () => request('/api/login', { email: 'resident@example.test', password: 'mock-password' }) };
 }
+
+test('weather requires a connected resident session and rejects ambiguous query parameters', async () => {
+  const h = await harness();
+  const signedOut = await h.request('/api/weather?zip=10001');
+  assert.equal(signedOut.code, 401);
+  assert.equal(h.state.weatherReads, 0);
+  await h.login();
+  for (const query of ['zip=10001&zip=10002', 'zip=10001&url=https://example.test', 'location=10001']) assert.equal((await h.request(`/api/weather?${query}`)).code, 400);
+  assert.equal(h.state.weatherReads, 0);
+  assert.deepEqual((await h.request('/api/weather')).body, { state: 'unconfigured', defaultZip: null });
+  h.state.weather = async zip => ({ state: 'fresh', zip });
+  assert.deepEqual((await h.request('/api/weather?zip=10001')).body, { state: 'fresh', zip: '10001' });
+});
+
+test('weather failures are sanitized and cannot invalidate thermostat readings or controls', async () => {
+  const h = await harness();
+  const connected = await h.login();
+  h.state.weather = async () => { throw new Error('secret provider payload'); };
+  const failed = await h.request('/api/weather?zip=10001');
+  assert.equal(failed.code, 503);
+  assert.deepEqual(failed.body, { state: 'unavailable', error: 'Weather is unavailable right now. Please try again shortly.' });
+  assert.deepEqual((await h.request('/api/status')).body, connected.body);
+  h.state.weather = async () => { throw new WeatherError(404, 'That US ZIP code was not found. Check it and try again.'); };
+  assert.equal((await h.request('/api/weather?zip=00000')).code, 404);
+  assert.equal(h.state.writes, 0);
+  assert.equal(h.state.reads, 1);
+});
+
+test('weather completion after logout cannot disclose location or restore authentication', async () => {
+  for (const reject of [false, true]) {
+    const h = await harness();
+    await h.login();
+    const entered = deferred();
+    const release = deferred();
+    h.state.weather = async () => {
+      entered.resolve();
+      await release.promise;
+      if (reject) throw new Error('provider failure');
+      return { state: 'fresh', zip: '10001', location: 'Example City' };
+    };
+    const pending = h.request('/api/weather?zip=10001');
+    await entered.promise;
+    await h.request('/api/logout', {});
+    release.resolve();
+    const result = await pending;
+    assert.equal(result.code, 401);
+    assert.equal(result.body.location, undefined);
+    assert.equal(result.body.zip, undefined);
+    assert.equal((await h.request('/api/status')).body.stage, 'signed_out');
+  }
+});
 
 test('a failed refresh removes old confirmation, preserves timestamp, and blocks commands until recovery', async () => {
   const h = await harness();

@@ -6,5 +6,6 @@
 !network-config.mjs
 !iapartments.mjs
 !cloud-mqtt.mjs
+!weather.mjs
 !public/
 !public/**

@@ -1,6 +1,6 @@
 {
   "name": "temperme",
-  "version": "0.2.0-beta.1",
+  "version": "0.3.0-beta.1",
   "private": true,
   "license": "MIT",
   "description": "Local browser controls for an iApartments Gen1 thermostat",

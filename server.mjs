@@ -4,6 +4,7 @@ import { randomBytes } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { AuthenticationDetails, CognitoUser, CognitoUserPool } from 'amazon-cognito-identity-js';
 import { isLoopback, networkConfig, requestOrigin, sameOriginJson, sessionCookie } from './network-config.mjs';
+import { createWeatherService, WeatherError } from './weather.mjs';
 
 // Public client identifiers found in both iApartments' web client and resident app.
 // These identify the vendor's authentication service, not an administrator account.
@@ -14,6 +15,7 @@ const { port, bindHost } = network;
 const sessions = new Map();
 const MAX_SESSIONS = 256;
 const signInAttempts = [];
+const weather = createWeatherService();
 const htmlPath = fileURLToPath(new URL('./public/index.html', import.meta.url));
 const adapterUrl = new URL('./iapartments.mjs', import.meta.url);
 
@@ -235,13 +237,28 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'GET' && req.url === '/healthz' && isLoopback(req.socket.remoteAddress)) return send(res, 200, { ok: true });
   if (!requestOrigin(network, req.headers)) return send(res, 403, { error: 'Invalid host' });
   try {
-    const path = new URL(req.url, `http://127.0.0.1:${port}`).pathname;
+    const url = new URL(req.url, `http://127.0.0.1:${port}`);
+    const path = url.pathname;
     if (req.method === 'GET' && path === '/') {
       sessionFor(req, res);
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       return res.end(await readFile(htmlPath));
     }
     if (req.method === 'GET' && path === '/api/status') return send(res, 200, status(sessionFor(req, res)));
+    if (req.method === 'GET' && path === '/api/weather') {
+      const session = sessionFor(req, res);
+      if (session.stage !== 'connected' || !session.user) return send(res, 401, { state: 'unavailable', error: 'Sign in to view weather.' });
+      if ([...url.searchParams.keys()].some(key => key !== 'zip') || url.searchParams.getAll('zip').length > 1) return send(res, 400, { state: 'unavailable', error: 'Enter one five-digit US ZIP code.' });
+      const attempt = session.attempt;
+      try {
+        const forecast = await weather.get(url.searchParams.has('zip') ? url.searchParams.get('zip') : undefined);
+        if (session.stage !== 'connected' || session.attempt !== attempt) return send(res, 401, { state: 'unavailable', error: 'Sign in to view weather.' });
+        return send(res, 200, forecast);
+      } catch (error) {
+        if (session.stage !== 'connected' || session.attempt !== attempt) return send(res, 401, { state: 'unavailable', error: 'Sign in to view weather.' });
+        return send(res, error instanceof WeatherError ? error.statusCode : 503, { state: 'unavailable', error: error instanceof WeatherError ? error.message : 'Weather is unavailable right now. Please try again shortly.' });
+      }
+    }
     if (req.method !== 'POST' || !['/api/login', '/api/mfa', '/api/logout', '/api/refresh', '/api/thermostat'].includes(path)) return send(res, 404, { error: 'Not found' });
     if (!sameOriginJson(network, req.headers)) return send(res, 403, { error: 'Same-origin JSON requests are required' });
     const session = sessionFor(req, res);
