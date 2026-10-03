@@ -24,9 +24,9 @@ TemperMe is an independent browser interface for **iApartments Gen1 thermostats*
 
 ## See it in action
 
-[![Watch a TemperMe walkthrough using demonstration data](docs/media/demo.gif)](docs/media/demo.mp4)
+[![Watch a TemperMe walkthrough using demonstration data](docs/media/demo.gif)](https://github.com/mgelsinger/temperme/raw/refs/heads/main/docs/media/demo.mp4)
 
-**[Watch or download the MP4 walkthrough](docs/media/demo.mp4)** · All screenshots and recordings use synthetic demonstration data. They show the real interface without a live account or thermostat.
+**[Download the 25-second MP4 walkthrough](https://github.com/mgelsinger/temperme/raw/refs/heads/main/docs/media/demo.mp4)** · All screenshots and recordings use synthetic demonstration data. They show the real interface without a live account or thermostat.
 
 ![TemperMe dashboard with current temperature, equipment activity, and temperature controls](docs/media/dashboard.png)
 
